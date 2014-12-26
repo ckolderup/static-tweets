@@ -5,8 +5,7 @@
   <title><%= dir_name.gsub(/-tweets$/, '') %></title>
 </head>
 <body>
-  <% tweet_ids.each do |tweet_id| %>
-    <% tweet = tweets.find { |t| t.id.to_s == tweet_id.to_s } %>
+  <% tweets.each do |tweet| %>
     <div class="media-forward root standalone-tweet ltr twitter-tweet not-touch">
       <blockquote class="tweet subject expanded h-entry">
         <% if tweet.media? %>

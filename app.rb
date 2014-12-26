@@ -46,6 +46,8 @@ tweet_ids.each_slice(100) do |ids|
   end
 end
 
+tweets = tweets.group_by(&:id).values_at(*tweet_ids.map(&:to_i)).flatten(1)
+
 File.open("./#{dir_name}/index.html", 'w') do |f|
   f << ERB.new(File.read('./tweets.html.erb')).result(binding)
 end

@@ -1,6 +1,6 @@
 Static Tweets allows you to back up the content of tweets (text + images + associated metadata) to an HTML file that you can keep for your personal reference.
 
-It's a command-line tool written in Ruby and requires Rubygems and Bundler.Rbenv or a tool that uses the .ruby-version file is recommended to ensure ruby version compatibility.
+It's a command-line tool written in Ruby and requires Rubygems and Bundler. Rbenv or a tool that uses the .ruby-version file is recommended to ensure ruby version compatibility.
 
 In order to use the tool, you'll first need to generate an 'application' on the Twitter Application Management page (https://apps.twitter.com/) and put your OAuth keys into a .env file in the root of your locally cloned repo. The following key/values are required:
 

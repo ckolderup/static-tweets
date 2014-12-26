@@ -1,0 +1,18 @@
+Static Tweets allows you to back up the content of tweets (text + images + associated metadata) to an HTML file that you can keep for your personal reference.
+
+It's a command-line tool written in Ruby and requires Rubygems and Bundler.Rbenv or a tool that uses the .ruby-version file is recommended to ensure ruby version compatibility.
+
+In order to use the tool, you'll first need to generate an 'application' on the Twitter Application Management page (https://apps.twitter.com/) and put your OAuth keys into a .env file in the root of your locally cloned repo. The following key/values are required:
+
+TWITTER_CONSUMER_KEY
+TWITTER_CONSUMER_SECRET
+TWITTER_ACCESS_TOKEN
+TWITTER_ACCESS_TOKEN_SECRET
+
+Once you've got that set up, you should make a plaintext file with a list of Twitter URLs separated by linebreaks. Then you can invoke the tool from the cloned repo root with the following command:
+
+bundle exec foreman run ruby app.rb <text_file>
+
+The result is a directory named to match the supplied text filename. Inside the directory is a JSON file with each tweet's full data as supplied by Twitter, corresponding images for any tweets that include media, and an index.html file that shows you the tweets in an embed-like view.
+
+If for some reason you want to run the command on the same text file twice, you'll need to delete the directory before running again.

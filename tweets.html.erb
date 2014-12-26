@@ -1,0 +1,67 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="tweets.css">
+</head>
+<body>
+  <% tweets.each do |tweet| %>
+    <div class="media-forward root standalone-tweet ltr twitter-tweet not-touch">
+      <blockquote class="tweet subject expanded h-entry">
+        <% if tweet.media? %>
+          <div class="cards-base cards-multimedia customisable-border">
+            <% tweet.media.each_with_index do |media,idx| %>
+              <div class="media">
+                <a class="photo-link  box-<%= idx %>" target="_blank" href="<%= media.expanded_url %>">
+                  <img class="autosized-media" alt="View image on Twitter" title="View image on Twitter" src="<%= "#{tweet.id}-#{idx}.jpg" %>" width="229">
+                </a>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="header">
+          <div class="h-card p-author">
+            <a class="u-url profile" href="https://twitter.com/<%= tweet.user.screen_name %>">
+              <img class="u-photo avatar" alt="" src="<%= tweet.user.profile_image_url %>">
+              <span class="full-name">
+                <span class="p-name customisable-highlight"><%= tweet.user.name %></span>
+              </span>
+              <span class="p-nickname">@<b><%= tweet.user.screen_name %></b></span>
+            </a>
+          </div>
+
+          <a class="follow-button profile" href="https://twitter.com/<%= tweet.user.screen_name%>" role="button" title="Follow <%= tweet.user.name %> on Twitter"><i class="ic-button-bird"></i>Follow</a>
+        </div>
+        <div class="content e-entry-content">
+          <p class="e-entry-title"><%= tweet.text.gsub(/http:\/\/t.co\/[a-zA-Z0-9]+$/,'') %></p>
+          <div class="dateline collapsible-container">
+            <a class="u-url customisable-highlight long-permalink" href="https://twitter.com/<%= tweet.user.screen_name %>/status/<%= tweet.id %>">
+              <time title="Time posted: <%= tweet.created_at.strftime('%e %b %Y, %H:%M:%S') %> (UTC)"><%= tweet.created_at.strftime('%l:%M %p - %e %b %Y') %></time>
+            </a>
+          </div>
+        </div>
+        <div class="footer customisable-border">
+          <span class="stats-narrow customisable-border">
+            <span class="stats">
+              <a href="https://twitter.com/<%= tweet.user.screen_name %>/status/<%= tweet.id %>" title="View Tweet on Twitter">
+                <span class="stats-retweets">
+                  <strong><%= tweet.retweet_count %></strong> Retweets
+                </span>
+              </a>
+              <a href="https://twitter.com/<%= tweet.user.screen_name %>/status/<%= tweet.id %>" title="View Tweet on Twitter">
+                <span class="stats-favorites">
+                  <strong><%= tweet.favorite_count %></strong> favorites
+                </span>
+              </a>
+            </span>
+          </span>
+          <ul class="tweet-actions" role="menu">
+            <li><a href="https://twitter.com/intent/tweet?in_reply_to=<%= tweet.id %>" class="reply-action web-intent" title="Reply"><i class="ic-reply ic-mask"></i><b>Reply</b></a></li>
+            <li><a href="https://twitter.com/intent/retweet?tweet_id=<%= tweet.id %>" class="retweet-action web-intent" title="Retweet"><i class="ic-retweet ic-mask"></i><b>Retweet</b></a></li>
+            <li><a href="https://twitter.com/intent/favorite?tweet_id=<%= tweet.id %>" class="favorite-action web-intent" title="Favorite"><i class="ic-fav ic-mask"></i><b>Favorite</b></a></li>
+          </ul>
+        </div>
+      </blockquote>
+    </div>
+  <% end %>
+</body>
+</html>

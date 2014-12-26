@@ -11,7 +11,7 @@
             <% tweet.media.each_with_index do |media,idx| %>
               <div class="media">
                 <a class="photo-link  box-<%= idx %>" target="_blank" href="<%= media.expanded_url %>">
-                  <img class="autosized-media" alt="View image on Twitter" title="View image on Twitter" src="<%= "#{tweet.id}-#{idx}.jpg" %>" width="229">
+                  <img class="autosized-media" alt="View image on Twitter" title="View image on Twitter" src="<%= "#{tweet.id}-#{idx}#{File.extname(URI.parse(media.media_url).path)}" %>" width="229">
                 </a>
               </div>
             <% end %>

@@ -11,7 +11,7 @@ TWITTER_ACCESS_TOKEN_SECRET
 
 Once you've got that set up, you should make a plaintext file with a list of Twitter URLs separated by linebreaks. Then you can invoke the tool from the cloned repo root with the following command:
 
-bundle exec foreman run ruby app.rb <text_file>
+./app.sh <text_file>
 
 The result is a directory named to match the supplied text filename. Inside the directory is a JSON file with each tweet's full data as supplied by Twitter, corresponding images for any tweets that include media, and an index.html file that shows you the tweets in an embed-like view.
 

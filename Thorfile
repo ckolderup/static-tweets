@@ -13,4 +13,15 @@ class Tweets < Thor
         .uniq
     StaticTweets::run_all(tweet_ids, filename)
   end
+
+  desc "from_url URL",
+    "make tweet backup scraping all tweets mentioned in the supplied URL"
+  def from_url(url)
+    document = open(url){ |io| io.read }
+    ids = document.scan(/https?:\/\/twitter\.com\/(\w+)\/status(es)?\/(\d+)/)
+        .map { |x| x.last } # just the matched id
+        .compact
+        .uniq
+    StaticTweets::run_all(ids, File.basename(URI.parse(url).path))
+  end
 end

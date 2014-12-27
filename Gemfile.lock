@@ -38,4 +38,5 @@ PLATFORMS
 
 DEPENDENCIES
   foreman
+  thor
   twitter (~> 5.13.0)

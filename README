@@ -9,10 +9,13 @@ TWITTER_CONSUMER_SECRET
 TWITTER_ACCESS_TOKEN
 TWITTER_ACCESS_TOKEN_SECRET
 
-Once you've got that set up, you should make a plaintext file with a list of Twitter URLs separated by linebreaks. Then you can invoke the tool from the cloned repo root with the following command:
+Once you've got that set up, you can either point it at a webpage that includes a bunch of embedded tweets or links to tweets or you can make a plaintext file with a list of Twitter URLs separated by linebreaks. Then you can invoke the tool from the cloned repo root with the following commands:
 
-./app.sh <text_file>
+./from_url.sh <url>
+./from_file.sh <text_file>
 
 The result is a directory named to match the supplied text filename. Inside the directory is a JSON file with each tweet's full data as supplied by Twitter, corresponding images for any tweets that include media, and an index.html file that shows you the tweets in an embed-like view.
+
+Please note that some websites have fancy features like infinite scroll that may hide a bunch of tweets from being displayed until a user interacts with the page in some way. If a page works this way, the command that takes a single URL will not work reliably and you'll have to compile a list of tweet ids in a file manually or via some other method. (This includes Storify URLs)
 
 If for some reason you want to run the command on the same text file twice, you'll need to delete the directory before running again.

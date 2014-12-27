@@ -2,12 +2,16 @@ Static Tweets allows you to back up the content of tweets (text + images + assoc
 
 It's a command-line tool written in Ruby and requires Rubygems and Bundler. Rbenv or a tool that uses the .ruby-version file is recommended to ensure ruby version compatibility.
 
-In order to use the tool, you'll first need to generate an 'application' on the Twitter Application Management page (https://apps.twitter.com/) and put your OAuth keys into a .env file in the root of your locally cloned repo. The following key/values are required:
+In order to use the tool, you'll first need to generate an 'application' on the Twitter Application Management page (https://apps.twitter.com/) and put your OAuth keys into a .env file in the root of your locally cloned repo. The following key/value pairs are required:
 
-TWITTER_CONSUMER_KEY
-TWITTER_CONSUMER_SECRET
-TWITTER_ACCESS_TOKEN
-TWITTER_ACCESS_TOKEN_SECRET
+TWITTER_CONSUMER_KEY=...
+TWITTER_CONSUMER_SECRET=...
+TWITTER_ACCESS_TOKEN=...
+TWITTER_ACCESS_TOKEN_SECRET=...
+
+You can optionally add the following key/value pairs in order to enable certain features:
+
+STORIFY_API_KEY=...
 
 There are a number of commands you can then use to download your tweet backup, depending on the source you want to use:
 

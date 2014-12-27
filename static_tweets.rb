@@ -2,6 +2,7 @@ require 'twitter'
 require 'open-uri'
 require 'erb'
 require 'date'
+require 'storify'
 
 # handles tasks required to write a static tweets document
 module StaticTweets
@@ -20,6 +21,13 @@ module StaticTweets
                    .compact
 
     write_index_html(tweets, dir_name)
+  end
+
+  def self.ids_from_tweet_urls(string)
+    string.scan(%r{https?://twitter.com/(\w+)/status(es)?/(\d+)})
+          .map(&:last)
+          .compact
+          .uniq
   end
 
   private

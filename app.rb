@@ -3,55 +3,82 @@ require 'open-uri'
 require 'erb'
 require 'date'
 
-client = Twitter::REST::Client.new do |config|
-  config.consumer_key        = ENV['TWITTER_CONSUMER_KEY']
-  config.consumer_secret     = ENV['TWITTER_CONSUMER_SECRET']
-  config.access_token        = ENV['TWITTER_ACCESS_TOKEN']
-  config.access_token_secret = ENV['TWITTER_ACCESS_TOKEN_SECRET']
-end
-
 def tweet_ids_from_urls_file(filename)
   File.readlines(filename)
       .map { |url| Regexp.new('\/(\d+)$').match(url)[1] }
       .compact
 end
 
-abort 'No input file' unless ARGV[0]
+def setup_tweets_directory(filename)
+  dir_name = File.basename(filename, '.*').gsub(/[^a-zA-Z0-9]/, '-') + '-tweets'
 
-tweet_ids = tweet_ids_from_urls_file(ARGV[0])
-abort 'No tweets found in input file' if tweet_ids.empty?
+  begin
+    Dir.mkdir(dir_name)
+  rescue SystemCallError
+    abort "Couldn't create directory #{dir_name}"
+  end
 
-dir_name = File.basename(ARGV[0], '.*').gsub(/[^a-zA-Z0-9]/, '-') + '-tweets'
-
-begin
-  Dir.mkdir(dir_name)
-rescue SystemCallError
-  abort "Couldn't create directory #{dir_name}"
+  dir_name
 end
 
-tweets = []
-tweet_ids.each_slice(100) do |ids|
-  client.statuses(ids).each do |tweet|
-    tweets << tweet
-    json = JSON.pretty_generate tweet.attrs
-    File.write("./#{dir_name}/#{tweet.id}.json", json)
-    next unless tweet.media?
+def twitter_client
+  Twitter::REST::Client.new do |config|
+    config.consumer_key        = ENV['TWITTER_CONSUMER_KEY']
+    config.consumer_secret     = ENV['TWITTER_CONSUMER_SECRET']
+    config.access_token        = ENV['TWITTER_ACCESS_TOKEN']
+    config.access_token_secret = ENV['TWITTER_ACCESS_TOKEN_SECRET']
+  end
+end
 
-    tweet.media.map(&:media_url).each_with_index do |url, idx|
-      extension = File.extname(URI.parse(url).path)
-      File.open("./#{dir_name}/#{tweet.id}-#{idx}#{extension}", 'w') do |f|
-        f << open(url).read
-      end
+def download_tweet_images(tweet, dir_name)
+  tweet.media.map(&:media_url).each_with_index do |url, idx|
+    extension = File.extname(URI.parse(url).path)
+    File.open("./#{dir_name}/#{tweet.id}-#{idx}#{extension}", 'w') do |f|
+      f << open(url).read
     end
   end
 end
 
-tweets = tweets.group_by(&:id)
-               .values_at(*tweet_ids.map(&:to_i))
-               .flatten(1)
-               .compact
-
-File.open("./#{dir_name}/index.html", 'w') do |f|
-  f << ERB.new(File.read('./tweets.html.erb')).result(binding)
+def tweets_to_files(tweet_ids, dir_name)
+  tweets = []
+  tweet_ids.each_slice(100) do |ids|
+    twitter_client.statuses(ids).each do |tweet|
+      tweets << tweet
+      json = JSON.pretty_generate tweet.attrs
+      File.write("./#{dir_name}/#{tweet.id}.json", json)
+      download_tweet_images(tweet, dir_name) if tweet.media?
+    end
+  end
+  tweets
 end
-FileUtils.cp('tweets.css', "./#{dir_name}/tweets.css")
+
+def write_index_html(tweets, dir_name)
+  File.open("./#{dir_name}/index.html", 'w') do |f|
+    f << ERB.new(File.read('./tweets.html.erb')).result(binding)
+  end
+  FileUtils.cp('tweets.css', "./#{dir_name}/tweets.css")
+end
+
+def run_all(filename)
+  abort 'No input file' unless filename
+
+  tweet_ids = tweet_ids_from_urls_file(filename)
+
+  abort 'No tweets found in input file' if tweet_ids.empty?
+
+  dir_name = setup_tweets_directory(filename)
+
+  tweets = tweets_to_files(tweet_ids, dir_name)
+
+  # reorder tweets in the order they were in the input file
+  # (the Twitter API bulk download endpoint doesn't retain order)
+  tweets = tweets.group_by(&:id)
+                 .values_at(*tweet_ids.map(&:to_i))
+                 .flatten(1)
+                 .compact
+
+  write_index_html(tweets, dir_name)
+end
+
+# other entry points tktk
+run_all(ARGV[0])

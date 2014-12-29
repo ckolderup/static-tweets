@@ -10,8 +10,9 @@ module StaticTweets
     abort 'No tweets found in input' if tweet_ids.empty?
 
     dir_name = setup_tweets_directory(filename)
+    FileUtils.cd(dir_name)
 
-    tweets = tweets_to_files(tweet_ids, dir_name)
+    tweets = tweets_to_files(tweet_ids)
 
     # reorder tweets in the order they were in the input file
     # (the Twitter API bulk download endpoint doesn't retain order)
@@ -20,7 +21,7 @@ module StaticTweets
                    .flatten(1)
                    .compact
 
-    write_index_html(tweets, dir_name)
+    write_index_html(tweets)
   end
 
   def self.ids_from_tweet_urls(string)
@@ -54,32 +55,32 @@ module StaticTweets
     end
   end
 
-  def self.download_tweet_images(tweet, dir_name)
+  def self.download_tweet_images(tweet)
     tweet.media.map(&:media_url).each_with_index do |url, idx|
       extension = File.extname(URI.parse(url).path)
-      File.open("./#{dir_name}/#{tweet.id}-#{idx}#{extension}", 'w') do |f|
+      File.open("#{tweet.id}-#{idx}#{extension}", 'w') do |f|
         f << open(url).read
       end
     end
   end
 
-  def self.tweets_to_files(tweet_ids, dir_name)
+  def self.tweets_to_files(tweet_ids)
     tweets = []
     tweet_ids.each_slice(100) do |ids|
       twitter_client.statuses(ids).each do |tweet|
         tweets << tweet
         json = JSON.pretty_generate tweet.attrs
-        File.write("./#{dir_name}/#{tweet.id}.json", json)
-        download_tweet_images(tweet, dir_name) if tweet.media?
+        File.write("#{tweet.id}.json", json)
+        download_tweet_images(tweet) if tweet.media?
       end
     end
     tweets
   end
 
-  def self.write_index_html(tweets, dir_name)
-    File.open("./#{dir_name}/index.html", 'w') do |f|
-      f << ERB.new(File.read('./tweets.html.erb')).result(binding)
+  def self.write_index_html(tweets)
+    File.open("index.html", 'w') do |f|
+      f << ERB.new(File.read('../tweets.html.erb')).result(binding)
     end
-    FileUtils.cp('tweets.css', "./#{dir_name}/tweets.css")
+    FileUtils.cp('../tweets.css', "tweets.css")
   end
 end

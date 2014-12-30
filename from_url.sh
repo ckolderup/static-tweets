@@ -1,1 +1,1 @@
-bundle exec foreman run thor tweets:from_url $1
+bundle exec thor tweets:from_url $1

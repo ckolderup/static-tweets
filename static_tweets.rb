@@ -3,13 +3,16 @@ require 'open-uri'
 require 'erb'
 require 'date'
 require 'storify'
+require 'dotenv'
+
+Dotenv.load
 
 # handles tasks required to write a static tweets document
 module StaticTweets
   def self.run_all(tweet_ids, filename)
     abort 'No tweets found in input' if tweet_ids.empty?
 
-    dir_name = setup_tweets_directory(filename)
+    dir_name = setup_directory(filename)
     FileUtils.cd(dir_name)
 
     tweets = tweets_to_files(tweet_ids)
@@ -17,23 +20,22 @@ module StaticTweets
     # reorder tweets in the order they were in the input file
     # (the Twitter API bulk download endpoint doesn't retain order)
     tweets = tweets.group_by(&:id)
-                   .values_at(*tweet_ids.map(&:to_i))
-                   .flatten(1)
-                   .compact
+                   .values_at(*tweet_ids)
+                   .flatten(1).compact
 
-    write_index_html(tweets)
+    write_index_html(tweets, dir_name.gsub(/-tweets$/, ''))
   end
 
   def self.ids_from_tweet_urls(string)
     string.scan(%r{https?://twitter.com/(\w+)/status(es)?/(\d+)})
           .map(&:last)
-          .compact
-          .uniq
+          .map(&:to_i)
+          .compact.uniq
   end
 
   private
 
-  def self.setup_tweets_directory(filename)
+  def self.setup_directory(filename)
     dir_name = File.basename(filename, '.*')
                    .gsub(/[^a-zA-Z0-9]/, '-') + '-tweets'
 
@@ -77,7 +79,9 @@ module StaticTweets
     tweets
   end
 
-  def self.write_index_html(tweets)
+  # TODO: get script path instead of using `..`
+  # until then, this can only be run from the same directory as rb/Thorfile
+  def self.write_index_html(tweets, title)
     File.open("index.html", 'w') do |f|
       f << ERB.new(File.read('../tweets.html.erb')).result(binding)
     end

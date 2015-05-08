@@ -23,7 +23,7 @@
         <div class="header">
           <div class="h-card p-author">
             <a class="u-url profile" href="https://twitter.com/<%= tweet.user.screen_name %>">
-              <img class="u-photo avatar" alt="" src="<%= tweet.user.profile_image_url %>">
+              <img class="u-photo avatar" alt="" src="<%= "#{tweet.user.id}#{File.extname(URI.parse(tweet.user.profile_image_url).path)}" %>">
               <span class="full-name">
                 <span class="p-name customisable-highlight"><%= tweet.user.name %></span>
               </span>

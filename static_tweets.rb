@@ -60,11 +60,22 @@ module StaticTweets
   def self.download_tweet_images(tweet)
     tweet.media.map(&:media_url).each_with_index do |url, idx|
       extension = File.extname(URI.parse(url).path)
-      File.open("#{tweet.id}-#{idx}#{extension}", 'w') do |f|
-        f << open(url).read
-      end
+      download_image(url, "#{tweet.id}-#{idx}#{extension}")
     end
   end
+
+  def self.download_tweet_avatar(tweet)
+    url = tweet.user.profile_image_url
+    extension = File.extname(URI.parse(url).path)
+    download_image(url, "#{tweet.user.id}#{extension}")
+  end
+
+  def self.download_image(url, filename)
+    File.open(filename, 'w') do |f|
+      f << open(url).read
+    end
+  end
+
 
   def self.tweets_to_files(tweet_ids)
     tweets = []
@@ -74,6 +85,7 @@ module StaticTweets
         json = JSON.pretty_generate tweet.attrs
         File.write("#{tweet.id}.json", json)
         download_tweet_images(tweet) if tweet.media?
+        download_tweet_avatar(tweet)
       end
     end
     tweets

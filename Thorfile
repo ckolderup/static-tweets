@@ -22,7 +22,7 @@ class Tweets < Thor
 
   desc "from_search QUERY",
     "make tweet backup from last N tweets matching Twitter search QUERY"
-  def from_user(username)
+  def from_search(username)
     # TODO
   end
 

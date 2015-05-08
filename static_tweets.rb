@@ -9,10 +9,10 @@ Dotenv.load
 
 # handles tasks required to write a static tweets document
 module StaticTweets
-  def self.run_all(tweet_ids, filename)
+  def self.run_all(tweet_ids, filename, options)
     abort 'No tweets found in input' if tweet_ids.empty?
 
-    dir_name = setup_directory(filename)
+    dir_name = setup_directory(filename, !!options[:force])
     FileUtils.cd(dir_name)
 
     tweets = tweets_to_files(tweet_ids)
@@ -35,14 +35,14 @@ module StaticTweets
 
   private
 
-  def self.setup_directory(filename)
+  def self.setup_directory(filename, overwrite_ok)
     dir_name = File.basename(filename, '.*')
                    .gsub(/[^a-zA-Z0-9]/, '-') + '-tweets'
 
     begin
       Dir.mkdir(dir_name)
     rescue SystemCallError
-      abort "Couldn't create directory #{dir_name}"
+      abort "Couldn't create directory #{dir_name}" unless overwrite_ok
     end
 
     dir_name

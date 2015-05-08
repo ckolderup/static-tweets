@@ -8,6 +8,8 @@ class Tweets < Thor
   include StaticTweets
   Dotenv.load
 
+  class_option :force, :type => :boolean
+
   desc "from_user USERNAME",
     "make tweet backup from last N tweets by user USERNAME"
   def from_user(username)
@@ -30,14 +32,14 @@ class Tweets < Thor
     "make tweet backup from a file of tweet URLs"
   def from_file(filename)
     ids = StaticTweets::ids_from_tweet_urls(File.readlines(filename).join("\n"))
-    StaticTweets::run_all(ids, filename)
+    StaticTweets::run_all(ids, filename, options)
   end
 
   desc "from_url URL",
     "make tweet backup scraping all tweets mentioned in the supplied URL"
   def from_url(url)
     ids = StaticTweets::ids_from_tweet_urls(open(url){ |io| io.read })
-    StaticTweets::run_all(ids, File.basename(URI.parse(url).path))
+    StaticTweets::run_all(ids, File.basename(URI.parse(url).path), options)
   end
 
   desc "from_storify URL",
@@ -58,6 +60,6 @@ class Tweets < Thor
       end
     end
 
-    StaticTweets::run_all(ids || [], slug)
+    StaticTweets::run_all(ids || [], slug, options)
   end
 end

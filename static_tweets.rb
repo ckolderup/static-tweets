@@ -7,15 +7,48 @@ require 'dotenv'
 
 Dotenv.load
 
+SEARCH_DEFAULTS = { count: 100 }
+TIMELINE_DEFAULTS = { count: 200 }
+FAVORITES_DEFAULTS = { count: 100 }
+
 # handles tasks required to write a static tweets document
 module StaticTweets
-  def self.run_all(tweet_ids, filename, options)
-    abort 'No tweets found in input' if tweet_ids.empty?
+  def self.download_from_search(query, options)
+    page_title = "Tweets matching #{query}"
+    safe_query = query.gsub(/[^a-zA-Z0-9]/,'-').squeeze('-').chomp('-').downcase
+    dir_name = "#{safe_query}-search-#{Time.now.strftime('%Y%m%d%H%M%S')}"
 
-    dir_name = setup_directory(filename, !!options[:force])
-    FileUtils.cd(dir_name)
+    download(:search, query, page_title, dir_name, SEARCH_DEFAULTS, options)
+  end
 
-    tweets = tweets_to_files(tweet_ids)
+  def self.download_user_timeline(username, options)
+    page_title = "@#{username}'s Tweets"
+    dir_name = "#{username}-tweets-#{Time.now.strftime('%Y%m%d%H%M%S')}"
+
+    download(:user_timeline, username, page_title,
+             dir_name, TIMELINE_DEFAULTS, options)
+  end
+
+  def self.download_user_favorites(username, options)
+    page_title = "@#{username}'s Favorites"
+    dir_name = "#{username}-favs-#{Time.now.strftime('%Y%m%d%H%M%S')}"
+
+    download(:favorites, username, page_title, dir_name,
+             FAVORITES_DEFAULTS, options)
+  end
+
+  def self.download_from_ids(tweet_ids, filename, options)
+    tweets = []
+    tweet_ids.each_slice(100) do |ids|
+      tweets.push(*twitter.statuses(ids))
+    end
+
+    page_title = File.basename(filename, '.*')
+                   .gsub(/[^a-zA-Z0-9]/, '-')
+    dir_name = page_title + '-tweets'
+    setup_directory(dir_name, !!options[:force])
+
+    tweets_to_files(tweets, dir_name)
 
     # reorder tweets in the order they were in the input file
     # (the Twitter API bulk download endpoint doesn't retain order)
@@ -23,7 +56,7 @@ module StaticTweets
                    .values_at(*tweet_ids)
                    .flatten(1).compact
 
-    write_index_html(tweets, dir_name.gsub(/-tweets$/, ''))
+    write_index_html(tweets, page_title, dir_name)
   end
 
   def self.ids_from_tweet_urls(string)
@@ -35,20 +68,30 @@ module StaticTweets
 
   private
 
-  def self.setup_directory(filename, overwrite_ok)
-    dir_name = File.basename(filename, '.*')
-                   .gsub(/[^a-zA-Z0-9]/, '-') + '-tweets'
+  def self.download(client_method_sym, param, title, dir_name, defaults, opts)
+    #symbolize keys for opts since Thor uses string keys UGH
+    opts = Hash[opts.map{ |k, v| [k.to_sym, v] }]
+    abort "API max is #{defaults[:count]}" if opts[:count] > defaults[:count]
 
+    tweets = twitter.send(client_method_sym, param, defaults.merge(opts))
+                    .take(opts[:count]) # necessary since search returns a dumb
+                                        # object that includes Enumerable
+
+    setup_directory(dir_name, !!opts[:force])
+    tweets_to_files(tweets, dir_name)
+    write_index_html(tweets, title, dir_name)
+  end
+
+
+  def self.setup_directory(dir_name, overwrite_ok)
     begin
       Dir.mkdir(dir_name)
     rescue SystemCallError
       abort "Couldn't create directory #{dir_name}" unless overwrite_ok
     end
-
-    dir_name
   end
 
-  def self.twitter_client
+  def self.twitter
     Twitter::REST::Client.new do |config|
       config.consumer_key        = ENV['TWITTER_CONSUMER_KEY']
       config.consumer_secret     = ENV['TWITTER_CONSUMER_SECRET']
@@ -57,17 +100,17 @@ module StaticTweets
     end
   end
 
-  def self.download_tweet_images(tweet)
+  def self.download_tweet_images(tweet, dir_name)
     tweet.media.map(&:media_url).each_with_index do |url, idx|
       extension = File.extname(URI.parse(url).path)
-      download_image(url, "#{tweet.id}-#{idx}#{extension}")
+      download_image(url, "#{dir_name}/#{tweet.id}-#{idx}#{extension}")
     end
   end
 
-  def self.download_tweet_avatar(tweet)
+  def self.download_tweet_avatar(tweet, dir_name)
     url = tweet.user.profile_image_url
     extension = File.extname(URI.parse(url).path)
-    download_image(url, "#{tweet.user.id}#{extension}")
+    download_image(url, "#{dir_name}/#{tweet.user.id}#{extension}")
   end
 
   def self.download_image(url, filename)
@@ -77,26 +120,24 @@ module StaticTweets
   end
 
 
-  def self.tweets_to_files(tweet_ids)
-    tweets = []
-    tweet_ids.each_slice(100) do |ids|
-      twitter_client.statuses(ids).each do |tweet|
-        tweets << tweet
-        json = JSON.pretty_generate tweet.attrs
-        File.write("#{tweet.id}.json", json)
-        download_tweet_images(tweet) if tweet.media?
-        download_tweet_avatar(tweet)
-      end
+  def self.tweets_to_files(tweets, dir_name)
+    abort 'No tweets found in input' if tweets.empty?
+
+    tweets.each do |tweet|
+      json = JSON.pretty_generate tweet.attrs
+      File.write("#{dir_name}/#{tweet.id}.json", json)
+      download_tweet_images(tweet, dir_name) if tweet.media?
+      download_tweet_avatar(tweet, dir_name)
     end
-    tweets
   end
 
-  # TODO: get script path instead of using `..`
-  # until then, this can only be run from the same directory as rb/Thorfile
-  def self.write_index_html(tweets, title)
-    File.open("index.html", 'w') do |f|
-      f << ERB.new(File.read('../tweets.html.erb')).result(binding)
+  def self.write_index_html(tweets, title, dir_name)
+    File.open("#{dir_name}/index.html", 'w') do |f|
+      f << ERB.new(File.read(
+                    File.join(File.dirname(__FILE__), 'tweets.html.erb')
+                  )).result(binding)
     end
-    FileUtils.cp('../tweets.css', "tweets.css")
+    FileUtils.cp(File.join(File.dirname(__FILE__), 'tweets.css'),
+                 "#{dir_name}/tweets.css")
   end
 end
